@@ -90,17 +90,17 @@ class motu:
 		
                
 		# define the output	(dataOut)
-        if (self.index*self.CHUNK) < len(self.chirp): # outputs the chirp signal in successive chunks
-            if ((self.index + 1)*self.CHUNK > len(self.chirp)): # if the last chunk index is larger than the maximum chirp index
-                endRIndex = len(self.chirp)
-                endLIndex = len(self.chirp) - self.index*self.CHUNK
+        if (self.index*self.CHUNK) < len(self.OutFun): # outputs the chirp signal in successive chunks
+            if ((self.index + 1)*self.CHUNK > len(self.OutFun)): # if the last chunk index is larger than the maximum chirp index
+                endRIndex = len(self.OutFun)
+                endLIndex = len(self.OutFun) - self.index*self.CHUNK
                 for k in range(len(self.ChannelsOut)): # for all output channels
 					# write chirp data in output channels
-                    self.dataOut[: endLIndex, self.ChannelsOut[k]] = self.chirp[self.index*self.CHUNK : endRIndex]*self.Amplitude[k] 
+                    self.dataOut[: endLIndex, self.ChannelsOut[k]] = self.OutFun[self.index*self.CHUNK : endRIndex]*self.Amplitude[k] 
                     self.dataOut[endLIndex :, self.ChannelsOut[k]] = 0
             else: # what to output in general
                 for k in range(len(self.ChannelsOut)):
-                    self.dataOut[:, self.ChannelsOut[k]] = self.chirp[self.index*self.CHUNK : (self.index + 1)*self.CHUNK]*self.Amplitude[k]
+                    self.dataOut[:, self.ChannelsOut[k]] = self.OutFun[self.index*self.CHUNK : (self.index + 1)*self.CHUNK]*self.Amplitude[k]
         else:  # if we reached the end of the chirp, outputs 0 signal
             self.dataOut[:, self.ChannelsOut] = 0
         
@@ -112,8 +112,13 @@ class motu:
         return (self.dataOut.tostring(), pyaudio.paContinue) # return the output data to be emitted
 
         
+	def outputFunction(self, OutFun = self.chirp):
+		''' Method that defines the output signal function, takes chirp as default'''
+		self.OutFun = OutFun
+	
+	
     def impulseRec(self, ChannelsIn, ChannelsOut, Amplitude = 1):
-	''' method that defines what is input and what is output ? '''
+		''' method that defines what is input and what is output ? '''
         if Amplitude == 1:
             Amplitude = [1]*len(ChannelsOut)
         
@@ -137,7 +142,7 @@ class motu:
         #plt.show()
 		# to have a long signal having the same frequency response as an impulse
 		nb = 2**(ceil(log(result.shape[0]) / log(2))) # length of the fft (ceil(n) is the smallest integrer above n)
-        ftchirp = np.fft.rfft(self.chirp, nb) # fft of the chirp signal (np = numpy)
+        ftchirp = np.fft.rfft(self.OutFun, nb) # fft of the output signal (np = numpy)
         impulse = np.zeros((ceil(self.RATE*self.dureeImpulse), result.shape[1])) # initialization of the impulse matrix
         for k in range(len(ChannelsIn)):
             ftresult = np.fft.rfft(result[:, k], nb)
@@ -155,6 +160,17 @@ class motu:
 if __name__== '__main__':
     m = motu() # define a class motu named m
     plt.cla() # clear axis
-    impulse = m.impulseRec(ChannelsIn = [0, 8], ChannelsOut = [1, 8])
+	
+	# Output function definition
+	t = np.arange(0.0, m.dureeImpulse, 1.0 / float(m.RATE)) # definition of time vector t from 0 to 1 s
+    MyFunction = signal.gausspulse(t) # cosine generator signal.chirp(time vector, f0 at t=0, t1, f1 at t1) 
+    MyFunction = MyFunction*2**30 # increase amplitude of the signal to be emitted to half the maximum possible amplitude in 32 bit
+    MyFunction = MyFunction.astype('int32')
+    
+	m.outputFunction(MyFunction) # set MyFunction as the output signal
+	
+	m.outputFunction() # if one want a chirp
+	
+	impulse = m.impulseRec(ChannelsIn = [0, 8], ChannelsOut = [1, 8])
     plt.plot(impulse[:, 0])
     plt.show()

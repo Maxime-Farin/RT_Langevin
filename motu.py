@@ -68,7 +68,7 @@ class motu:
     def callback(self, in_data, frame_count, time_info, status):
         ''' 
         callback is running when PyAudio needs new audio data to play (when the buffer is full)
-        Returns the output vector: a chunk of length self.CHUNK of the chirp over all channels
+        Returns the output vector: a chunk of length self.CHUNK of the signal over all channels
         '''
         #for i in range(0, int(len(result) // self.CHUNK)+1):
         if self.index == -1:
@@ -111,9 +111,18 @@ class motu:
             
         return (self.dataOut.tostring(), pyaudio.paContinue) # return the output data to be emitted
 
-    def ChirpRec(self,ChannelsIn, ChannelsOut):
+    def ChirpRec(self, ChannelsIn, ChannelsOut):
+        '''
+        Play a chrip signals on ChannelsOut, 
+        records them on ChannelsIn 
+        and correlate 
         
-        result=self.PlayAndRec(ChannelsIn, ChannelsOut)
+        Arguments:
+        ChannelsIn: input channels we want to use
+        ChannelsOut: output channels we want to use
+        '''
+        
+        result = self.PlayAndRec(ChannelsIn, ChannelsOut) # call PlayandRec function to send a chrip signal
         
         nb = 2**(ceil(log(result.shape[0]) / log(2))) # length of the fft (ceil(n) is the smallest integrer above n)
         ftchirp = np.fft.rfft(self.chirp, nb) # fft of the output signal (np = numpy)
@@ -123,10 +132,22 @@ class motu:
             corre = np.fft.irfft(ftresult*np.conjugate(ftchirp))
             impulse[:, k] = corre[:impulse.shape[0]]    
         
-        return(impulse)
+        return(impulse) # return a time vector of the correlation
+        
         
     def PlayAndRec(self, ChannelsIn, ChannelsOut, OutFun=None, Amplitude = 1):
-        ''' method that defines what is input and what is output ? '''
+        ''' 
+        Play function OutFun on ChannelsOut, 
+        records it on ChannelsIn and 
+        return the recorded signals
+        
+        Arguments:
+        ChannelsIn: input channels we want to use
+        ChannelsOut: output channels we want to use
+        OutFun: Function to play (default = chirp)
+        Amplitude: Amplitude of the output signal (default = 1)
+        '''
+        
         if OutFun==None:
             self.OutFun = np.outer(self.chirp*2**30,np.ones(len(ChannelsOut)))
         else:
@@ -165,23 +186,22 @@ class motu:
         
 
         
-if __name__== '__main__':
+if __name__== '__main__': # mettre ceci dans un if permet de lancer le script motu.py ou de l'utiliser comme library comme import motu.py sans que cette partie soit lue
     m = motu() # define a class motu named m
     plt.cla() # clear axis
+    '''
+    # if one want a chirp (for example to calibrate the response between sensor and receiver)
+    impulse = m.ChirpRec(ChannelsIn = [8], ChannelsOut = [19]) 
+    plt.plot(impulse)
+    plt.show()
+    '''
     
     # Output function definition
     t = np.arange(0, 1, 1.0 / float(m.RATE)) # definition of time vector t from 0 to 1 s
-    MyFunction = np.column_stack((np.sin(t*2*np.pi*1000),np.sin(t*2*np.pi*400))) # cosine generator signal.chirp(time vector, f0 at t=0, t1, f1 at t1) 
-       
-    
-    #m.outputFunction() # if one want a chirp
-    
-    impulse = m.ChirpRec(ChannelsIn = [8], ChannelsOut = [19])
-    
-   
-    plt.plot(impulse)
-    plt.show()
-    result=m.PlayAndRec(ChannelsIn = [8], ChannelsOut = [18], OutFun = MyFunction)
+    MyFunction = np.column_stack((np.sin(t*2*np.pi*1000),np.sin(t*2*np.pi*400)))
+ 
+    # 
+    result = m.PlayAndRec(ChannelsIn = [8, 12], ChannelsOut = [18], OutFun = MyFunction)
     plt.figure()
     plt.plot(result)
     plt.show()

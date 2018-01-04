@@ -15,15 +15,16 @@ class motu:
         self.CHUNK = 1024*8 # size of the buffer
         self.FORMAT = pyaudio.paInt32 # format of the data
         self.CHANNELS = 24 # number of channels
-        self.RATE = 48000 # sampling rate
+        self.RATE = 48000*2 # sampling rate
         self.dureeImpulse = 1.0 # duration of the emitted impulse
         self.RECORD_SECONDS = self.dureeImpulse + 0.5 # duration of the recording
         
         t = np.arange(0.0, self.dureeImpulse, 1.0 / float(self.RATE)) # definition of time vector t from 0 to 1 s
         
         # Chirp definition (chirp = emitted sound)
-        self.chirp = signal.chirp(t, 100, t.max(), 3000) # cosine generator signal.chirp(time vector, f0 at t=0, t1, f1 at t1) 
-        #self.chirp = self.chirp*2**30 # increase amplitude of the signal to be emitted to half the maximum possible amplitude in 32 bit
+        self.chirp = signal.chirp(t, 100, t.max(), 15000) # cosine generator signal.chirp(time vector, f0 at t=0, t1, f1 at t1) 
+        self.chirp  = self.chirp*np.hanning(t.shape[0])
+		#self.chirp = self.chirp*2**30 # increase amplitude of the signal to be emitted to half the maximum possible amplitude in 32 bit
         #self.chirp = self.chirp.astype('int32') # format
         #flagFound = False # flagFound = False if the audio device is not found
         
@@ -112,9 +113,9 @@ class motu:
 
     def ChirpRec(self, ChannelsIn, ChannelsOut):
         '''
-        Play a chrip signals on ChannelsOut, 
-        records them on ChannelsIn 
-        and correlate 
+        Play a chrip signals c(t) on ChannelsOut, 
+        records them on ChannelsIn (r(t))
+        and correlate r(t) * c(-t) to return the impulse response h(t) between source and sensor
         
         Arguments:
         ChannelsIn: input channels we want to use
@@ -164,7 +165,7 @@ class motu:
         self.Amplitude = Amplitude # sets the value of the output signal amplitude in the whole class
         self.ChannelsIn = ChannelsIn # sets the input channels in the whole class
         self.ChannelsOut = ChannelsOut # sets the output channels in the whole class
-        self.data3 = np.zeros([self.CHUNK, len(ChannelsIn)], dtype = np.int32) # initialize output matrix to reserve space
+        self.data3 = np.zeros([self.CHUNK, len(ChannelsIn)], dtype = np.int32) # initialize matrix to reserve space
         self.result = np.zeros((int(self.RECORD_SECONDS*self.RATE), len(ChannelsIn)), dtype = np.int32) # initialize input matrix
         
         # stop this function here until the recording is over (when self.index becomes -1 again)
@@ -187,23 +188,21 @@ if __name__== '__main__': # mettre ceci dans un if permet de lancer le script mo
     m = motu() # define a class motu named m
     plt.cla() # clear axis
     
-    Channels1 = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 18, 20, 23]
-    Channels2 = [19]
+    Channels1 = [11, 13, 16, 18, 19, 20, 21, 22, 23]
+    Channels1 = [c - 1 for c in Channels1]
+    Channels2 = [2]
+    Channels2 = [c - 1 for c in Channels2]
 	
-    # if one want a chirp (for example to calibrate the response between sensor and receiver)
-    impulse = m.ChirpRec(ChannelsIn = Channels1, ChannelsOut = Channels2) 
+    # if one want a chirp (for example to calibrate the response between source and receiver)
+    impulse = m.ChirpRec(ChannelsIn = Channels1, ChannelsOut = Channels2) # reponse impulsionnelle
     plt.plot(impulse)
     plt.show()
     
-    MyFunction = np.zeros(impulse.shape)
-    for k in range(impulse.shape[1]):
-        for n in range(len(impulse)):
-            MyFunction[n, k] = impulse[len(impulse) - 1 - n, k]
         
-    result = m.PlayAndRec(ChannelsIn = Channels2, ChannelsOut = Channels1, OutFun = MyFunction)
-        
+    TRSignal = impulse[::-1, :]/np.abs(impulse).max()
+    result = m.PlayAndRec(ChannelsIn = Channels2, ChannelsOut = Channels1, OutFun = TRSignal)
     plt.plot(result)
-    plt.show()    
+    plt.show()
     '''
     # Output function definition
     t = np.arange(0, 1, 1.0 / float(m.RATE)) # definition of time vector t from 0 to 1 s

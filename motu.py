@@ -201,7 +201,7 @@ if __name__== '__main__': # mettre ceci dans un if permet de lancer le script mo
     MyFunction = np.column_stack((np.sin(t*2*np.pi*1000),np.sin(t*2*np.pi*400)))
  
     # 
-    result = m.PlayAndRec(ChannelsIn = [8, 12], ChannelsOut = [18], OutFun = MyFunction)
+    result = m.PlayAndRec(ChannelsIn = [8], ChannelsOut = [18], OutFun = MyFunction)
     plt.figure()
     plt.plot(result)
     plt.show()

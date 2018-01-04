@@ -75,12 +75,11 @@ class motu:
             return (self.dataOut0.tostring(), pyaudio.paContinue) # return 0 signal in output
          
         # mise en forme des vecteurs de donnees            
-        self.data4[:, :] = np.fromstring(in_data, dtype = np.int32).reshape([self.CHUNK, self.CHANNELS])
+        self.data4[:, :] = np.fromstring(in_data, dtype = np.int32).reshape([self.CHUNK, self.CHANNELS])# input data in_data are written in matrix data4
         for k in range(len(self.ChannelsIn)): # size depends on the number of channels we choose
-            self.data3[:, k] = self.data4[:, self.ChannelsIn[k]]
+            self.data3[:, k] = self.data4[:, self.ChannelsIn[k]] # self.data3 contains the input data
 
-        # define the input (result)
-        #if (self.index*self.CHUNK) < self.result.shape[0]:
+        # write the input data in self.result chunk by chunk
         if ((self.index + 1)*self.CHUNK > self.result.shape[0]): # if chirp length is longer than recording length (not likely)
             endRIndex = self.result.shape[0]
             endLIndex = self.result.shape[0] - self.index*self.CHUNK
@@ -89,7 +88,7 @@ class motu:
             self.result[self.index*self.CHUNK : (self.index + 1)*self.CHUNK, :] = self.data3[:, :]
         
                
-        # define the output    (dataOut)
+        # write the output data in self.dataOut chunk by chunk
         if (self.index*self.CHUNK) < self.OutFun.shape[0]: # outputs the chirp signal in successive chunks
             if (self.index + 1)*self.CHUNK > self.OutFun.shape[0]: # if the last chunk index is larger than the maximum chirp index
                 endRIndex =self.OutFun.shape[0]
@@ -122,24 +121,24 @@ class motu:
         ChannelsOut: output channels we want to use
         '''
         
-        result = self.PlayAndRec(ChannelsIn, ChannelsOut) # call PlayandRec function to send a chrip signal
+        result = self.PlayAndRec(ChannelsIn, ChannelsOut) # call PlayandRec function to send a chrip signal and store the recorded signal in result
         
         nb = 2**(ceil(log(result.shape[0]) / log(2))) # length of the fft (ceil(n) is the smallest integrer above n)
-        ftchirp = np.fft.rfft(self.chirp, nb) # fft of the output signal (np = numpy)
-        impulse = np.zeros((ceil(self.RATE*self.dureeImpulse), result.shape[1])) # initialization of the impulse matrix
+        ftchirp = np.fft.rfft(self.chirp, nb) # fft of the chirp signal (np = numpy)
+        impulse = np.zeros((ceil(self.RATE*self.dureeImpulse), result.shape[1])) # initialization of the impulse matrix to reserve space
         for k in range(len(ChannelsIn)):
-            ftresult = np.fft.rfft(result[:, k], nb)
-            corre = np.fft.irfft(ftresult*np.conjugate(ftchirp))
-            impulse[:, k] = corre[:impulse.shape[0]]    
+            ftresult = np.fft.rfft(result[:, k], nb) # ftt of the recorded signal
+            corre = np.fft.irfft(ftresult*np.conjugate(ftchirp)) # do the correlation between the recorded signal and the emitted chirp on every channels
+            impulse[:, k] = corre[:impulse.shape[0]] # store the correlation for each channel in the matrix impulse
         
-        return(impulse) # return a time vector of the correlation
+        return(impulse) # return a vector of the correlation for each channel
         
         
     def PlayAndRec(self, ChannelsIn, ChannelsOut, OutFun=None, Amplitude = 1):
         ''' 
         Play function OutFun on ChannelsOut, 
-        records it on ChannelsIn and 
-        return the recorded signals
+        Records it on ChannelsIn and 
+        Return the recorded signals
         
         Arguments:
         ChannelsIn: input channels we want to use
@@ -148,10 +147,10 @@ class motu:
         Amplitude: Amplitude of the output signal (default = 1)
         '''
         
-        if OutFun==None:
+        if OutFun==None: # if no function is given in argument the default is a chirp
             self.OutFun = np.outer(self.chirp*2**30,np.ones(len(ChannelsOut)))
         else:
-            self.OutFun = OutFun*2**30
+            self.OutFun = OutFun*2**30 # sets amplitude to half the possible maximum amplitude in 32 bit (max is 2**31)
             
             
         if Amplitude == 1:
@@ -160,25 +159,21 @@ class motu:
         if len(Amplitude) != len(ChannelsOut):
             throw('ChannelsOut and Amplitude dims should be equal')
         
-        self.Amplitude = Amplitude
-        self.ChannelsIn = ChannelsIn
-        self.ChannelsOut = ChannelsOut
-        self.data3 = np.zeros([self.CHUNK, len(ChannelsIn)], dtype = np.int32) # initialize output matrix
+        self.Amplitude = Amplitude # sets the value of the output signal amplitude in the whole class
+        self.ChannelsIn = ChannelsIn # sets the input channels in the whole class
+        self.ChannelsOut = ChannelsOut # sets the output channels in the whole class
+        self.data3 = np.zeros([self.CHUNK, len(ChannelsIn)], dtype = np.int32) # initialize output matrix to reserve space
         self.result = np.zeros((self.RECORD_SECONDS*self.RATE, len(ChannelsIn)), dtype = np.int32) # initialize input matrix
         
         # stop this function here until the recording is over (when self.index becomes -1 again)
+        # so that the result vector is complete before returning it
         self.index = 0
         while self.index != -1:
             time.sleep(0.1)
         
-        result = self.result.astype(dtype = np.float32) # format of the input matrix
+        result = self.result.astype(dtype = np.float32) # complete recorded signal
 
-        #plt.plot(result)
-        #plt.show()
-        # to have a long signal having the same frequency response as an impulse
-
-
-        return(result)
+        return(result) #return complete signal recorded on ChannelsIn
         
     def __close__(self):
         self.stream.close() # fermer le stream
@@ -189,19 +184,22 @@ class motu:
 if __name__== '__main__': # mettre ceci dans un if permet de lancer le script motu.py ou de l'utiliser comme library comme import motu.py sans que cette partie soit lue
     m = motu() # define a class motu named m
     plt.cla() # clear axis
-    '''
+    
     # if one want a chirp (for example to calibrate the response between sensor and receiver)
     impulse = m.ChirpRec(ChannelsIn = [8], ChannelsOut = [19]) 
     plt.plot(impulse)
     plt.show()
-    '''
     
+    
+    
+    '''
     # Output function definition
     t = np.arange(0, 1, 1.0 / float(m.RATE)) # definition of time vector t from 0 to 1 s
     MyFunction = np.column_stack((np.sin(t*2*np.pi*1000),np.sin(t*2*np.pi*400)))
  
-    # 
+    
     result = m.PlayAndRec(ChannelsIn = [8], ChannelsOut = [18], OutFun = MyFunction)
     plt.figure()
     plt.plot(result)
     plt.show()
+    '''

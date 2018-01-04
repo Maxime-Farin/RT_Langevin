@@ -122,16 +122,18 @@ class motu:
         '''
         
         result = self.PlayAndRec(ChannelsIn, ChannelsOut) # call PlayandRec function to send a chrip signal and store the recorded signal in result
-        
+        # r(t) = h(t) * c(t) (h(t): impulsional response between source and sensor)
+		
         nb = 2**(ceil(log(result.shape[0]) / log(2))) # length of the fft (ceil(n) is the smallest integrer above n)
-        ftchirp = np.fft.rfft(self.chirp, nb) # fft of the chirp signal (np = numpy)
+        ftchirp = np.fft.rfft(self.chirp, nb) # fft(c(t)) fft of the chirp signal (np = numpy)
         impulse = np.zeros((ceil(self.RATE*self.dureeImpulse), result.shape[1])) # initialization of the impulse matrix to reserve space
         for k in range(len(ChannelsIn)):
-            ftresult = np.fft.rfft(result[:, k], nb) # ftt of the recorded signal
-            corre = np.fft.irfft(ftresult*np.conjugate(ftchirp)) # do the correlation between the recorded signal and the emitted chirp on every channels
-            impulse[:, k] = corre[:impulse.shape[0]] # store the correlation for each channel in the matrix impulse
+            ftresult = np.fft.rfft(result[:, k], nb) # ftt(r(t)) : fft of the recorded signal
+            corre = np.fft.irfft(ftresult*np.conjugate(ftchirp)) # r(t) * c(-t) = h(t) * c(t) * c(-t) 
+			# do the correlation between the recorded signal and the conjugate of the emitted chirp on every channels
+            impulse[:, k] = corre[:impulse.shape[0]] # store the correlation for each channel in impulse
         
-        return(impulse) # return a vector of the correlation for each channel
+        return(impulse) # return a vector of the impulsional response h(t) between each channel and the emitor for each channel
         
         
     def PlayAndRec(self, ChannelsIn, ChannelsOut, OutFun = None, Amplitude = 1):
@@ -185,9 +187,9 @@ if __name__== '__main__': # mettre ceci dans un if permet de lancer le script mo
     m = motu() # define a class motu named m
     plt.cla() # clear axis
     
-    Channels1 = [4, 8, 12]
+    Channels1 = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 18, 20, 23]
     Channels2 = [19]
-    
+	
     # if one want a chirp (for example to calibrate the response between sensor and receiver)
     impulse = m.ChirpRec(ChannelsIn = Channels1, ChannelsOut = Channels2) 
     plt.plot(impulse)

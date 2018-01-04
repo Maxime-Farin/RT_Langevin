@@ -147,7 +147,7 @@ class motu:
         Amplitude: Amplitude of the output signal (default = 1)
         '''
         
-        if OutFun==None: # if no function is given in argument the default is a chirp
+        if OutFun is None: # if no function is given in argument the default is a chirp
             self.OutFun = np.outer(self.chirp*2**30,np.ones(len(ChannelsOut)))
         else:
             self.OutFun = OutFun*2**30 # sets amplitude to half the possible maximum amplitude in 32 bit (max is 2**31)
@@ -163,7 +163,7 @@ class motu:
         self.ChannelsIn = ChannelsIn # sets the input channels in the whole class
         self.ChannelsOut = ChannelsOut # sets the output channels in the whole class
         self.data3 = np.zeros([self.CHUNK, len(ChannelsIn)], dtype = np.int32) # initialize output matrix to reserve space
-        self.result = np.zeros((self.RECORD_SECONDS*self.RATE, len(ChannelsIn)), dtype = np.int32) # initialize input matrix
+        self.result = np.zeros((int(self.RECORD_SECONDS*self.RATE), len(ChannelsIn)), dtype = np.int32) # initialize input matrix
         
         # stop this function here until the recording is over (when self.index becomes -1 again)
         # so that the result vector is complete before returning it
@@ -190,8 +190,13 @@ if __name__== '__main__': # mettre ceci dans un if permet de lancer le script mo
     plt.plot(impulse)
     plt.show()
     
-    
-    
+    MyFunction = zeros(impulse.shape[0])
+    for k in range(len(impulse) - 1):
+	    MyFunction[k] = impulse[len(impulse) - 1 - k]
+		
+    result = m.PlayAndRec(ChannelsIn = [18], ChannelsOut = [8], OutFun = MyFunction)
+		
+		
     '''
     # Output function definition
     t = np.arange(0, 1, 1.0 / float(m.RATE)) # definition of time vector t from 0 to 1 s

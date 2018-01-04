@@ -134,7 +134,7 @@ class motu:
         return(impulse) # return a vector of the correlation for each channel
         
         
-    def PlayAndRec(self, ChannelsIn, ChannelsOut, OutFun=None, Amplitude = 1):
+    def PlayAndRec(self, ChannelsIn, ChannelsOut, OutFun = None, Amplitude = 1):
         ''' 
         Play function OutFun on ChannelsOut, 
         Records it on ChannelsIn and 
@@ -185,18 +185,23 @@ if __name__== '__main__': # mettre ceci dans un if permet de lancer le script mo
     m = motu() # define a class motu named m
     plt.cla() # clear axis
     
+    Channels1 = [4, 8, 12]
+    Channels2 = [19]
+    
     # if one want a chirp (for example to calibrate the response between sensor and receiver)
-    impulse = m.ChirpRec(ChannelsIn = [8], ChannelsOut = [19]) 
+    impulse = m.ChirpRec(ChannelsIn = Channels1, ChannelsOut = Channels2) 
     plt.plot(impulse)
     plt.show()
     
-    MyFunction = zeros(impulse.shape[0])
-    for k in range(len(impulse) - 1):
-	    MyFunction[k] = impulse[len(impulse) - 1 - k]
-		
-    result = m.PlayAndRec(ChannelsIn = [18], ChannelsOut = [8], OutFun = MyFunction)
-		
-		
+    MyFunction = np.zeros(impulse.shape)
+    for k in range(impulse.shape[1]):
+        for n in range(len(impulse)):
+            MyFunction[n, k] = impulse[len(impulse) - 1 - n, k]
+        
+    result = m.PlayAndRec(ChannelsIn = Channels2, ChannelsOut = Channels1, OutFun = MyFunction)
+        
+    plt.plot(result)
+    plt.show()    
     '''
     # Output function definition
     t = np.arange(0, 1, 1.0 / float(m.RATE)) # definition of time vector t from 0 to 1 s

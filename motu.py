@@ -155,11 +155,13 @@ class motu:
             ChannelsOut = [ChannelsOut]
 		
         if OutFun is None: # if no function is given in argument the default is a chirp
-            self.OutFun = np.outer(self.chirp*2**30,np.ones(len(ChannelsOut)))
+            self.OutFun = np.outer(self.chirp*2**30, np.ones(len(ChannelsOut)))
         else:
             self.OutFun = OutFun*2**30 # sets amplitude to half the possible maximum amplitude in 32 bit (max is 2**31)
             
-            
+        self.OutFun = self.OutFun / 5
+			
+			
         if Amplitude == 1:
             Amplitude = [1]*len(ChannelsOut)
         
@@ -208,23 +210,32 @@ if __name__== '__main__': # mettre ceci dans un if permet de lancer le script mo
         time.sleep(0.5)
     # if one want a chirp (for example to calibrate the response between source and receiver)
     
-    plt.plot(impulse)
-    plt.show()
-    
+	time_impulse = np.arange(0.0, m.dureeImpulse, 1.0 / float(m.RATE))
+	
+	'''
+    plt.plot(time_impulse, impulse)
+    plt.xlabel('Time [sec]')
+	plt.ylabel('Counts')
+	plt.show(block = False)
+
+    '''
     # use the fact that the sound path is reversible h(-t) = h(t)
     TRSignal = impulse[::-1, :]/np.abs(impulse).max() # signal is reserved temporally and normalized to 1
     result = m.PlayAndRec(ChannelsIn, ChannelsOut, OutFun = TRSignal) 
     # reversed signal is reemitted to focus an impulse on initial source
-    plt.plot(result)
-    plt.show()
+	
+	time_result = np.arange(0.0, m.RECORD_SECONDS, 1.0 / float(m.RATE))
+	
+	filename1 = "Emitted_impulse.txt"
+	filename2 = "Recorded_impulse.txt"
+	# writes into file
+	
+	
+	
+	'''
+    plt.plot(time_vect, result, 'k')
+	plt.xlabel('Time [sec]')
+	plt.ylabel('Counts')
+    plt.show(block = False)
     '''
-    # Output function definition
-    t = np.arange(0, 1, 1.0 / float(m.RATE)) # definition of time vector t from 0 to 1 s
-    MyFunction = np.column_stack((np.sin(t*2*np.pi*1000),np.sin(t*2*np.pi*400)))
- 
-    
-    result = m.PlayAndRec(ChannelsIn = [8], ChannelsOut = [18], OutFun = MyFunction)
-    plt.figure()
-    plt.plot(result)
-    plt.show()
-    '''
+	

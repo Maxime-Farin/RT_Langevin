@@ -163,7 +163,7 @@ class motu:
         else:
             self.OutFun = OutFun*2**30 # sets amplitude to half the possible maximum amplitude in 32 bit (max is 2**31)
 
-        self.OutFun = self.OutFun/5
+        #self.OutFun = self.OutFun/5
 
         if Amplitude == 1:
             Amplitude = [1]*len(ChannelsOut)
@@ -201,9 +201,9 @@ if __name__== '__main__': # mettre ceci dans un if permet de lancer le script mo
     m = motu() # define a class motu named m
     plt.cla() # clear axis
 
-    ChannelsOut = [11, 13, 16, 18, 19, 20, 21, 22, 23]
+    ChannelsOut = [1, 2, 3, 4, 5, 6, 7, 8, 19, 20, 21, 22, 23, 24]
     ChannelsOut = [c - 1 for c in ChannelsOut] # must retain 1 because sensor number = python number +1
-    ChannelsIn = [26]
+    ChannelsIn = [12]
     ChannelsIn = [c - 1 for c in ChannelsIn]
 
     # emits a chirp from each ChannelsOut successively and record it on ChannelIn
@@ -238,16 +238,16 @@ if __name__== '__main__': # mettre ceci dans un if permet de lancer le script mo
     plt.ylabel("Counts")
     plt.show()#block = False)
 
-    '''
+    
     # write in filename
-    filename = "Source_and_Recorded_impulses"
+    filename = "Source_and_Recorded_impulses_sensor11"
 
-    with open(filename, 'w') as fichier:
+    with open(filename, 'wb') as fichier:
         mon_pickler = pickle.Pickler(fichier)
         mon_pickler.dump(time_impulse)
-    with open(filename, 'a') as fichier:
+    with open(filename, 'ab') as fichier:
         mon_pickler = pickle.Pickler(fichier)
         mon_pickler.dump(impulse)
         mon_pickler.dump(time_result)
         mon_pickler.dump(result)
-    '''
+    

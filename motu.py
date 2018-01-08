@@ -203,9 +203,9 @@ if __name__== '__main__': # mettre ceci dans un if permet de lancer le script mo
     m = motu() # define a class motu named m
     plt.cla() # clear axis
 
-    ChannelsOut = [1, 2, 3, 4, 5, 6, 7, 8, 19, 20, 21, 22, 23, 24]
+    ChannelsOut = [1, 2, 3, 4, 5, 6, 7, 8, 17, 18, 19, 20, 21, 22, 23, 24]
     ChannelsOut = [c - 1 for c in ChannelsOut] # must retain 1 because sensor number = python number +1
-    ChannelsIn = [12] #capteur piezo sur la plaque
+    ChannelsIn = [9] #capteur piezo sur la plaque
     ChannelsIn = [c - 1 for c in ChannelsIn]
 
     # emits a chirp from each ChannelsOut successively and record it on ChannelIn
@@ -229,7 +229,7 @@ if __name__== '__main__': # mettre ceci dans un if permet de lancer le script mo
     time_result = np.arange(0.0, m.RECORD_SECONDS, 1.0 / float(m.RATE)) 
     
     
-    savefilename = "20180801_Test_sensor"
+    savefilename = "20180801_Parallel_plate"
     ChannelsPlate = [9, 10, 11, 12, 13, 14]
     ChannelsPlate = [c - 1 for c in ChannelsPlate]
 
@@ -240,42 +240,39 @@ if __name__== '__main__': # mettre ceci dans un if permet de lancer le script mo
         # reversed signal is reemitted to focus an impulse on a particular point on the plate
 
     
-        max_result[k] = max(result)
+        max_result[k] = max(np.abs(result)) # save the maximum amplitude to compute the PSF
 
 
         plt.plot(time_result, result, 'k')
         plt.xlabel("Time [s]")
         plt.ylabel("Counts")
-        plt.title("Impulse focused on sensor 12, recorded on sensor " + str(ChannelsPlate[k] + 1))
+        plt.title("Impulse focused on sensor " + str(ChannelsIn[0] + 1) + ", recorded on sensor " + str(ChannelsPlate[k] + 1))
         plt.rc('font', size = 18)
         plt.show()#block = False)
 
     
         # write in filename
-        filename = savefilename + "_" + str(ChannelsOut[2] + 1)
+        filename = savefilename + "_sensor_" + str(ChannelsPlate[k] + 1)
 
-        with open(filename, 'wb') as fichier:
-            p = pickle.Pickler(fichier)
-            p.dump(time_impulse)
-        with open(filename, 'ab') as fichier:
-            p = pickle.Pickler(fichier)
-            p.dump(impulse)
-            p.dump(time_result)
-            p.dump(result)
-            p.dump(max_result[k])
+        data = {'time_impulse':time_impulse, 'impulse':impulse, 'time_result':time_result, 'result':result}
+        savemat(filename, data)
+   
             
-            
-    Distance_vect = [18.5, 11, 12, 0, 7.5, 16]
+    Distance_vect = [0, 21.5, 8, 18.5, 25, 9.5] #[18.5, 11, 12, 0, 7.5, 16] # distance from sensor 12
     PSF = np.column_stack((np.array(Distance_vect).reshape(6,1), np.array(max_result)))
     PSF = PSF[PSF[:,0].argsort()]
     
     Distance_cm = PSF[:, 0]
-    PSF_values = np.log10(PSF[:, 1]) / np.log10(max(PSF[:, 1]))
+    PSF_values = 10*np.log10(PSF[:, 1] / max(PSF[:, 1]))
+    
+    filename = savefilename + "_PSF"
+    data = {'Distance_cm':Distance_cm, 'PSF':PSF_values}
+    savemat(filename, data)
     
     # Plot the Point Spread Function (PSF)
     plt.plot(Distance_cm, PSF_values, 'k')
     plt.xlabel("Distance [cm]")
-    plt.ylabel("PSF")
+    plt.ylabel("PSF [dB]")
     plt.title(savefilename)
     plt.rc('font', size = 18)
     plt.show()

@@ -5,7 +5,7 @@ import pyaudio
 import wave
 import numpy as np
 import scipy.signal as signal
-from scipy.io import savemat
+from scipy.io import savemat, loadmat
 import matplotlib.pyplot as plt
 from math import *
 import time
@@ -49,7 +49,7 @@ class motu:
                 if device['hostApi'] == 2: # look if one device have the right protocol and print its info
                     print(device)
             print('device not found')
-            quit()
+            exit()
 
         self.index = -1
         self.dataOut = np.zeros([self.CHUNK, self.CHANNELS], dtype = np.int32) # define the data matrix to attribute some space for these matrix
@@ -161,7 +161,7 @@ class motu:
             ChannelsIn = [ChannelsIn]    
 
         if OutFun is None: # if no function is given in argument the default is a chirp
-            self.OutFun = np.outer(self.chirp*2**30,np.ones(len(ChannelsOut)))
+            self.OutFun = np.outer(self.chirp*2**30, np.ones(len(ChannelsOut)))
         else:
             self.OutFun = OutFun*2**30 # sets amplitude to half the possible maximum amplitude in 32 bit (max is 2**31)
 
@@ -229,7 +229,7 @@ if __name__== '__main__': # mettre ceci dans un if permet de lancer le script mo
     time_result = np.arange(0.0, m.RECORD_SECONDS, 1.0 / float(m.RATE)) 
     
     
-    savefilename = "20180801_Parallel_plate"
+    savefilename = "20180108_Normal_Plate_16capteurs"
     ChannelsPlate = [9, 10, 11, 12, 13, 14]
     ChannelsPlate = [c - 1 for c in ChannelsPlate]
 
@@ -243,19 +243,19 @@ if __name__== '__main__': # mettre ceci dans un if permet de lancer le script mo
         max_result[k] = max(np.abs(result)) # save the maximum amplitude to compute the PSF
 
 
-        plt.plot(time_result, result, 'k')
-        plt.xlabel("Time [s]")
-        plt.ylabel("Counts")
-        plt.title("Impulse focused on sensor " + str(ChannelsIn[0] + 1) + ", recorded on sensor " + str(ChannelsPlate[k] + 1))
-        plt.rc('font', size = 18)
-        plt.show()#block = False)
+        # plt.plot(time_result, result, 'k')
+        # plt.xlabel("Time [s]")
+        # plt.ylabel("Counts")
+        # plt.title("Impulse focused on sensor " + str(ChannelsIn[0] + 1) + ", recorded on sensor " + str(ChannelsPlate[k] + 1))
+        # plt.rc('font', size = 18)
+        # plt.show()#block = False)
 
     
         # write in filename
-        filename = savefilename + "_sensor_" + str(ChannelsPlate[k] + 1)
+        # filename = savefilename + "_sensor_" + str(ChannelsPlate[k] + 1)
 
-        data = {'time_impulse':time_impulse, 'impulse':impulse, 'time_result':time_result, 'result':result}
-        savemat(filename, data)
+        # data = {'time_impulse':time_impulse, 'impulse':impulse, 'time_result':time_result, 'result':result}
+        # savemat(filename, data)
    
             
     Distance_vect = [0, 21.5, 8, 18.5, 25, 9.5] #[18.5, 11, 12, 0, 7.5, 16] # distance from sensor 12

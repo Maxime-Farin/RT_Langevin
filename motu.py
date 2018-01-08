@@ -157,6 +157,8 @@ class motu:
 
         if isinstance(ChannelsOut, int): # if ChannelsOut is only 1 integer, convert into list to compute len
             ChannelsOut = [ChannelsOut]
+        if isinstance(ChannelsIn, int): # if ChannelsIn is only 1 integer, convert into list to compute len
+            ChannelsIn = [ChannelsIn]    
 
         if OutFun is None: # if no function is given in argument the default is a chirp
             self.OutFun = np.outer(self.chirp*2**30,np.ones(len(ChannelsOut)))
@@ -203,7 +205,7 @@ if __name__== '__main__': # mettre ceci dans un if permet de lancer le script mo
 
     ChannelsOut = [1, 2, 3, 4, 5, 6, 7, 8, 19, 20, 21, 22, 23, 24]
     ChannelsOut = [c - 1 for c in ChannelsOut] # must retain 1 because sensor number = python number +1
-    ChannelsIn = [12]
+    ChannelsIn = [12] #capteur piezo sur la plaque
     ChannelsIn = [c - 1 for c in ChannelsIn]
 
     # emits a chirp from each ChannelsOut successively and record it on ChannelIn
@@ -224,30 +226,56 @@ if __name__== '__main__': # mettre ceci dans un if permet de lancer le script mo
 
     # use the fact that the sound path is reversible h(-t) = h(t)
     TRSignal = impulse[: : -1, :] / np.abs(impulse).max() # signal is reserved temporally and normalized to 1
-    result = m.PlayAndRec(ChannelsIn, ChannelsOut, OutFun = TRSignal)
-    # reversed signal is reemitted to focus an impulse on initial source
+    time_result = np.arange(0.0, m.RECORD_SECONDS, 1.0 / float(m.RATE)) 
+    
+    
+    savefilename = "20180801_Test_sensor"
+    ChannelsPlate = [9, 10, 11, 12, 13, 14]
+    ChannelsPlate = [c - 1 for c in ChannelsPlate]
 
-
+    max_result = np.zeros([len(ChannelsPlate), 1], dtype = np.float)
+    
+    for k in range(len(ChannelsPlate)):
+        result = m.PlayAndRec(ChannelsPlate[k], ChannelsOut, OutFun = TRSignal)
+        # reversed signal is reemitted to focus an impulse on a particular point on the plate
 
     
-    time_result = np.arange(0.0, m.RECORD_SECONDS, 1.0 / float(m.RATE))
+        max_result[k] = max(result)
 
 
-    plt.plot(time_result, result, 'k')
-    plt.xlabel("Time [s]")
-    plt.ylabel("Counts")
-    plt.show()#block = False)
+        plt.plot(time_result, result, 'k')
+        plt.xlabel("Time [s]")
+        plt.ylabel("Counts")
+        plt.title("Impulse focused on sensor 12, recorded on sensor " + str(ChannelsPlate[k] + 1))
+        plt.rc('font', size = 18)
+        plt.show()#block = False)
 
     
-    # write in filename
-    filename = "Source_and_Recorded_impulses_sensor11"
+        # write in filename
+        filename = savefilename + "_" + str(ChannelsOut[2] + 1)
 
-    with open(filename, 'wb') as fichier:
-        mon_pickler = pickle.Pickler(fichier)
-        mon_pickler.dump(time_impulse)
-    with open(filename, 'ab') as fichier:
-        mon_pickler = pickle.Pickler(fichier)
-        mon_pickler.dump(impulse)
-        mon_pickler.dump(time_result)
-        mon_pickler.dump(result)
+        with open(filename, 'wb') as fichier:
+            p = pickle.Pickler(fichier)
+            p.dump(time_impulse)
+        with open(filename, 'ab') as fichier:
+            p = pickle.Pickler(fichier)
+            p.dump(impulse)
+            p.dump(time_result)
+            p.dump(result)
+            p.dump(max_result[k])
+            
+            
+    Distance_vect = [18.5, 11, 12, 0, 7.5, 16]
+    PSF = np.column_stack((np.array(Distance_vect).reshape(6,1), np.array(max_result)))
+    PSF = PSF[PSF[:,0].argsort()]
     
+    Distance_cm = PSF[:, 0]
+    PSF_values = np.log10(PSF[:, 1]) / np.log10(max(PSF[:, 1]))
+    
+    # Plot the Point Spread Function (PSF)
+    plt.plot(Distance_cm, PSF_values, 'k')
+    plt.xlabel("Distance [cm]")
+    plt.ylabel("PSF")
+    plt.title(savefilename)
+    plt.rc('font', size = 18)
+    plt.show()

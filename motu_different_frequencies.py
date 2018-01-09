@@ -15,8 +15,12 @@ from motu import *
 m = motu() # define a class motu named m
 plt.cla() # clear axis
 
-FREQ0 = [100, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 11000, 12000, 13000, 14000]
-FREQ1 = [1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 11000, 12000, 13000, 14000, 15000]
+#FREQ0 = [100, 500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000, 7500, 8000, 9000]
+#FREQ1 = [1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000, 7500, 8000, 8500, 9000, 10000]
+
+Deltaf = [10, 100, 500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000, 7500, 8000]
+Central_freq = 5500
+
 
 ChannelsOut = list(range(32))
 ChannelsOut = [c - 1 for c in ChannelsOut] # must retain 1 because sensor number = python number +1
@@ -24,10 +28,10 @@ ChannelsIn = [9] #capteur piezo sur la plaque
 ChannelsIn = [c - 1 for c in ChannelsIn]
     
 
-for ff in range(len(FREQ0)):
+for ff in range(len(Deltaf)):
 
-    freq0 = FREQ0[ff]
-    freq1 = FREQ1[ff]
+    freq0 = Central_freq - Deltaf[ff] / 2 #FREQ0[ff]
+    freq1 = Central_freq + Deltaf[ff] / 2 #FREQ1[ff]
 
     # emits a chirp from each ChannelsOut successively and record it on ChannelIn
     impulse = np.zeros([ceil(m.RATE*m.dureeImpulse), len(ChannelsOut)], dtype = np.int32)
@@ -50,12 +54,13 @@ for ff in range(len(FREQ0)):
     time_result = np.arange(0.0, m.RECORD_SECONDS, 1.0 / float(m.RATE)) 
     
     
-    savefilename = "20180109_32capteurs_" + str(FREQ0[ff]) + "_" + str(FREQ1[ff]) + "Hz"
+    savefilename = "20180109_32capteurs_" + str(freq0) + "_" + str(freq1) + "Hz"
     ChannelsPlate = [9, 10, 11, 12, 13, 14]
     ChannelsPlate = [c - 1 for c in ChannelsPlate]
 
     max_amplitude = np.zeros([len(ChannelsPlate), 1], dtype = np.float)
     energy = np.zeros([len(ChannelsPlate), 1], dtype = np.float)
+    #mean_freq = np.zeros([len(ChannelsPlate), 1], dtype = np.float) 
     
     for k in range(len(ChannelsPlate)):
         result = m.PlayAndRec(ChannelsPlate[k], ChannelsOut, OutFun = TRSignal)
@@ -63,6 +68,17 @@ for ff in range(len(FREQ0)):
     
         max_amplitude[k] = max(np.abs(result)) # save the maximum amplitude to compute the PSF
         energy[k] = np.trapz(np.abs(result[:, 0])**2, x = time_result) # integral of the squared signal
+        
+        #plt.plot(time_result, result, 'k')
+        #plt.show()
+        '''
+        xF = np.fft.rfft(result)
+        N = len(result)
+        xF = xF[0 : N/2]
+        freq = np.linspace(0, m.RATE/2, N/2)
+        
+        mean_freq[k] = np.trapz(abs(xF)*freq) / np.trapz(abs(xF))
+        '''
         '''
         if ChannelsPlate[k] == 8:
             plt.plot(time_result, result, 'k')
@@ -81,10 +97,10 @@ for ff in range(len(FREQ0)):
     
     Distance_cm = PSF[:, 0]
     PSF_values = 10*np.log10(PSF[:, 1] / max(PSF[:, 1]))
-    Frequency_range = [FREQ0[ff], FREQ1[ff]]
+    Frequency_range = [freq0, freq1]
     
     filename = savefilename + "_PSF"
-    data = {'Distance_cm':Distance_cm, 'PSF':PSF_values, 'ChannelsPlate':ChannelsPlate, 'Frequency_range':Frequency_range, 'max_amplitude':max_amplitude, 'energy':energy}
+    data = {'Distance_cm':Distance_cm, 'PSF':PSF_values, 'ChannelsPlate':ChannelsPlate, 'Frequency_range':Frequency_range, 'max_amplitude':max_amplitude, 'energy':energy}#, 'mean_freq_impulse':mean_freq}
     savemat(filename, data)
     '''
     # Plot the Point Spread Function (PSF)

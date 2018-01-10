@@ -110,7 +110,7 @@ class motu:
         return (self.dataOut.tostring(), pyaudio.paContinue) # return the output data to be emitted
 
         
-    def Chirp(self, freq0 = 100, freq1 = 15000):
+    def Chirp(self, freq0 = 100, freq1 = 15000, duree = 1.0):
         '''
         Definition of a chirp signal
         
@@ -119,18 +119,18 @@ class motu:
         freq1 = maximum frequency in Hz of the chirp
         '''
         
-        t = np.arange(0.0, self.dureeImpulse, 1.0 / float(self.RATE)) # definition of time vector t from 0 to 1 s
+        t = np.arange(0.0, duree, 1.0 / float(self.RATE)) # definition of time vector t from 0 to 1 s
 
         # Chirp definition (chirp = emitted sound)
         chirp_signal = signal.chirp(t, freq0, t.max(), freq1) # cosine generator signal.chirp(time vector, f0 at t=0, t1, f1 at t1)
-        chirp_signal = chirp_signal*np.hanning(t.shape[0]) # hanning window to taper signal
+        #chirp_signal = chirp_signal*np.hanning(t.shape[0]) # hanning window to taper signal
         
         return(chirp_signal)
      
         
         
         
-    def ChirpRec(self, ChannelsIn, ChannelsOut, freq0 = 100, freq1 = 15000):
+    def ChirpRec(self, ChannelsIn, ChannelsOut, freq0 = 100, freq1 = 15000, duree = 1):
         '''
         Play a chrip signals c(t) on ChannelsOut,
         records them on ChannelsIn (r(t))
@@ -142,13 +142,14 @@ class motu:
         freq0 = minimum frequency in Hz of the chirp
         freq1 = maximum frequency in Hz of the chirp 
         '''
-
+        self.RECORD_SECONDS = duree + 0.5
         result = self.PlayAndRec(ChannelsIn, ChannelsOut, freq0 = freq0, freq1 = freq1) # call PlayandRec function to send a chrip signal and store the recorded signal in result
+        result = result.astype(np.float)
         # r(t) = h(t) * c(t) (h(t): impulsional response between source and sensor)
 
         nb = 2**(ceil(log(result.shape[0]) / log(2))) # length of the fft (ceil(n) is the smallest integrer above n)
         ftchirp = np.fft.rfft(self.Chirp(freq0, freq1), nb) # fft(c(t)) fft of the chirp signal (np = numpy)
-        impulse = np.zeros([ceil(self.RATE*self.dureeImpulse), result.shape[1]], dtype = np.int32) # initialization of the impulse matrix to reserve space
+        impulse = np.zeros([ceil(self.RATE*duree), result.shape[1]]) # initialization of the impulse matrix to reserve space
         for k in range(len(ChannelsIn)):
             ftresult = np.fft.rfft(result[:, k], nb) # ftt(r(t)) : fft of the recorded signal
             corre = np.fft.irfft(ftresult*np.conjugate(ftchirp)) # r(t) * c(-t) = h(t) * c(t) * c(-t)
@@ -203,9 +204,9 @@ class motu:
         while self.index != -1:
             time.sleep(0.1)
 
-        result = self.result.astype(dtype = np.float32) # complete recorded signal
+        #result = self.result # complete recorded signal
 
-        return(result) #return complete signal recorded on ChannelsIn
+        return(self.result) #return complete signal recorded on ChannelsIn
 
 
     def __close__(self):
@@ -214,6 +215,8 @@ class motu:
         '''
         self.stream.close()
         self.p.terminate()
+        del self.p
+        del self.stream
 
 
 
@@ -223,8 +226,7 @@ if __name__== '__main__': # mettre ceci dans un if permet de lancer le script mo
     
     FREQ0 = [100, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 11000, 12000, 13000, 14000]
     FREQ1 = [1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 11000, 12000, 13000, 14000, 15000]
-
-    ChannelsOut = list(range(32))
+    ChannelsOut = [1]#list(range(32))
     ChannelsOut = [c - 1 for c in ChannelsOut] # must retain 1 because sensor number = python number +1
     ChannelsIn = [9] #capteur piezo sur la plaque
     ChannelsIn = [c - 1 for c in ChannelsIn]
@@ -234,9 +236,9 @@ if __name__== '__main__': # mettre ceci dans un if permet de lancer le script mo
     
         freq0 = FREQ0[ff]
         freq1 = FREQ1[ff]
-
+        
         # emits a chirp from each ChannelsOut successively and record it on ChannelIn
-        impulse = np.zeros([ceil(m.RATE*m.dureeImpulse), len(ChannelsOut)], dtype = np.int32)
+        impulse = np.zeros([ceil(m.RATE*m.dureeImpulse), len(ChannelsOut)])
         for k in range(len(ChannelsOut)):
             impulse[:, k] = m.ChirpRec(ChannelsIn, ChannelsOut[k], freq0 = freq0, freq1 = freq1)[:, 0] # reponse impulsionnelle
             time.sleep(0.5)
@@ -288,7 +290,7 @@ if __name__== '__main__': # mettre ceci dans un if permet de lancer le script mo
         Distance_cm = PSF[:, 0]
         PSF_values = 10*np.log10(PSF[:, 1] / max(PSF[:, 1]))
         Frequency_range = [FREQ0[ff], FREQ1[ff]]
-        
+        '''
         filename = savefilename + "_PSF"
         data = {'Distance_cm':Distance_cm, 'PSF':PSF_values, 'ChannelsPlate':ChannelsPlate, 'Frequency_range':Frequency_range, 'max_amplitude':max_amplitude, 'energy':energy}
         savemat(filename, data)
@@ -300,4 +302,4 @@ if __name__== '__main__': # mettre ceci dans un if permet de lancer le script mo
         plt.title(savefilename)
         plt.rc('font', size = 18)
         plt.show()
-        '''
+        

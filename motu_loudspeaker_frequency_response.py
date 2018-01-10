@@ -22,7 +22,7 @@ try:
     freq1 = 25000
     duree = 3
 
-    ChannelsOut = [26]
+    ChannelsOut = [28]
     ChannelsOut = [c - 1 for c in ChannelsOut] # must retain 1 because sensor number = python number +1
     ChannelsIn = [13] #capteur piezo sur la plaque
     ChannelsIn = [c - 1 for c in ChannelsIn]

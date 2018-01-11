@@ -12,6 +12,11 @@ import time
 import pickle
 from motu import *
 
+'''
+Script that compute the amplitude spectrum of a compressed impulsion played by a loudspeaker 
+in order to evaluate the frequency response of the loudspeaker.
+'''
+
 
 m = motu() # define a class motu named m
 

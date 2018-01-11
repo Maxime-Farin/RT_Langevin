@@ -18,30 +18,30 @@ plt.cla() # clear axis
 
 try: 
 
-    FREQ0 = [100, 500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000, 7500, 8000, 9000]
-    FREQ1 = [1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000, 7500, 8000, 8500, 9000, 10000]
+    #FREQ0 = [100, 500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000, 7500, 8000, 9000]
+    #FREQ1 = [1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000, 7500, 8000, 8500, 9000, 10000]
 
-    #Deltaf = [10, 100, 500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000, 7500, 8000]
-    #Central_freq = 5500
+    Deltaf = [10, 100, 500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000, 7500, 8000] # bandwidth
+    Central_freq = 5500
 
 
-    ChannelsOut = list(range(32))
+    ChannelsOut = list(range(32)) # Channels of the loudspeakers that will play a signal
     ChannelsOut = [c - 1 for c in ChannelsOut] # must retain 1 because sensor number = python number +1
     ChannelsIn = [9] #capteur piezo sur la plaque
     ChannelsIn = [c - 1 for c in ChannelsIn]
         
 
-    for ff in range(len(FREQ0)):
+    for ff in range(len(Deltaf)):
 
-        freq0 = FREQ0[ff] #Central_freq - Deltaf[ff] / 2 #FREQ0[ff]
-        freq1 = FREQ1[ff] #Central_freq + Deltaf[ff] / 2 #FREQ1[ff]
+        freq0 = Central_freq - Deltaf[ff] / 2 #FREQ0[ff] # minimum frequency of the chirp
+        freq1 = Central_freq + Deltaf[ff] / 2 #FREQ1[ff] # maximum frequency of the chirp
 
         # emits a chirp from each ChannelsOut successively and record it on ChannelIn
-        impulse = np.zeros([ceil(m.RATE*m.dureeImpulse), len(ChannelsOut)], dtype = np.int32)
+        impulse = np.zeros([ceil(m.RATE*m.dureeImpulse), len(ChannelsOut)])
         for k in range(len(ChannelsOut)):
             impulse[:, k] = m.ChirpRec(ChannelsIn, ChannelsOut[k], freq0 = freq0, freq1 = freq1)[:, 0] # reponse impulsionnelle
             time.sleep(0.5)
-        # if one want a chirp (for example to calibrate the response between source and receiver)
+        
         
         time_impulse = np.arange(0.0, m.dureeImpulse, 1.0 / float(m.RATE))
         
@@ -53,11 +53,11 @@ try:
         '''
 
         # use the fact that the sound path is reversible h(-t) = h(t)
-        TRSignal = impulse[: : -1, :] / np.abs(impulse).max() # signal is reserved temporally and normalized to 1
+        TRSignal = impulse[: : -1, :] / np.abs(impulse).max() # signal is reversed temporally and normalized to 1
         time_result = np.arange(0.0, m.RECORD_SECONDS, 1.0 / float(m.RATE)) 
         
         
-        savefilename = "20180110_32capteurs_" + str(freq0) + "_" + str(freq1) + "Hz"
+        savefilename = "20180111_32capteurs_" + str(freq0) + "_" + str(freq1) + "Hz"
         ChannelsPlate = [9, 10, 11, 12, 13, 14]
         ChannelsPlate = [c - 1 for c in ChannelsPlate]
 
@@ -74,14 +74,7 @@ try:
             
             #plt.plot(time_result, result, 'k')
             #plt.show()
-            '''
-            xF = np.fft.rfft(result)
-            N = len(result)
-            xF = xF[0 : N/2]
-            freq = np.linspace(0, m.RATE/2, N/2)
-            
-            mean_freq[k] = np.trapz(abs(xF)*freq) / np.trapz(abs(xF))
-            '''
+
             '''
             if ChannelsPlate[k] == 8:
                 plt.plot(time_result, result, 'k')
@@ -94,14 +87,15 @@ try:
             '''
             
              
-        Distance_vect = [0, 21.5, 8, 18.5, 25, 9.5] #[18.5, 11, 12, 0, 7.5, 16] # distance from sensor 12
+        Distance_vect = [0, 21.5, 8, 18.5, 25, 9.5] #[18.5, 11, 12, 0, 7.5, 16] # distance from sensor 9 in cm
         PSF = np.column_stack((np.array(Distance_vect).reshape(6,1), np.array(max_amplitude)))
-        PSF = PSF[PSF[:,0].argsort()]
+        PSF = PSF[PSF[:,0].argsort()] # sort data along the distance column
         
-        Distance_cm = PSF[:, 0]
-        PSF_values = 10*np.log10(PSF[:, 1] / max(PSF[:, 1]))
+        Distance_cm = PSF[:, 0] # distance from sensor 9 in cm
+        PSF_values = 10*np.log10(PSF[:, 1] / max(PSF[:, 1])) # Point spread function in dB
         Frequency_range = [freq0, freq1]
         
+        # saving data in a .mat file
         filename = savefilename + "_PSF"
         data = {'Distance_cm':Distance_cm, 'PSF':PSF_values, 'ChannelsPlate':ChannelsPlate, 'Frequency_range':Frequency_range, 'max_amplitude':max_amplitude, 'energy':energy}#, 'mean_freq_impulse':mean_freq}
         savemat(filename, data)

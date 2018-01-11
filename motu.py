@@ -13,7 +13,13 @@ import pickle
 
 
 class motu:
-    """ motu class"""
+    """ 
+    motu class
+    
+    motu opens a stream when called m = motu()
+    functions m.ChirpRec and m.PlayandRec allow to play signal on some audio channels and record them on other channels
+    (see description below)
+    """
     def __init__(self):
         ''' constructor of class motu '''
         self.CHUNK = 1024*8 # size of the buffer
@@ -115,12 +121,13 @@ class motu:
         Definition of a chirp signal
         
         Arguments:
-        freq0 = minimum frequency in Hz of the chirp
-        freq1 = maximum frequency in Hz of the chirp
+        freq0 = minimum frequency in Hz of the chirp (if OutFun is None) (default = 100 Hz)
+        freq1 = maximum frequency in Hz of the chirp (default = 15000 Hz)
+        duree = duration of the chirp (default = 1 sec)
         '''
         
         t = np.arange(0.0, duree, 1.0 / float(self.RATE)) # definition of time vector t from 0 to 1 s
-
+        self.dureeImpulse = duree
         # Chirp definition (chirp = emitted sound)
         chirp_signal = signal.chirp(t, freq0, t.max(), freq1) # cosine generator signal.chirp(time vector, f0 at t=0, t1, f1 at t1)
         #chirp_signal = chirp_signal*np.hanning(t.shape[0]) # hanning window to taper signal
@@ -130,7 +137,7 @@ class motu:
         
         
         
-    def ChirpRec(self, ChannelsIn, ChannelsOut, freq0 = 100, freq1 = 15000, duree = 1):
+    def ChirpRec(self, ChannelsIn, ChannelsOut, freq0 = 100, freq1 = 15000, duree = 1.0):
         '''
         Play a chrip signals c(t) on ChannelsOut,
         records them on ChannelsIn (r(t))
@@ -139,16 +146,17 @@ class motu:
         Arguments:
         ChannelsIn: input channels we want to use
         ChannelsOut: output channels we want to use
-        freq0 = minimum frequency in Hz of the chirp
-        freq1 = maximum frequency in Hz of the chirp 
+        freq0 = minimum frequency in Hz of the chirp (if OutFun is None) (default = 100 Hz)
+        freq1 = maximum frequency in Hz of the chirp (default = 15000 Hz)
+        duree = duration of the chirp (default = 1 sec)
         '''
-        self.RECORD_SECONDS = duree + 0.5
-        result = self.PlayAndRec(ChannelsIn, ChannelsOut, freq0 = freq0, freq1 = freq1) # call PlayandRec function to send a chrip signal and store the recorded signal in result
+        self.dureeImpulse = duree
+        result = self.PlayAndRec(ChannelsIn, ChannelsOut, freq0 = freq0, freq1 = freq1, duree = duree) # call PlayandRec function to send a chrip signal and store the recorded signal in result
         result = result.astype(np.float)
         # r(t) = h(t) * c(t) (h(t): impulsional response between source and sensor)
 
         nb = 2**(ceil(log(result.shape[0]) / log(2))) # length of the fft (ceil(n) is the smallest integrer above n)
-        ftchirp = np.fft.rfft(self.Chirp(freq0, freq1), nb) # fft(c(t)) fft of the chirp signal (np = numpy)
+        ftchirp = np.fft.rfft(self.Chirp(freq0, freq1, duree), nb) # fft(c(t)) fft of the chirp signal (np = numpy)
         impulse = np.zeros([ceil(self.RATE*duree), result.shape[1]]) # initialization of the impulse matrix to reserve space
         for k in range(len(ChannelsIn)):
             ftresult = np.fft.rfft(result[:, k], nb) # ftt(r(t)) : fft of the recorded signal
@@ -159,7 +167,7 @@ class motu:
         return(impulse) # return a vector of the impulsional response h(t) between each channel and the emitor for each channel
 
 
-    def PlayAndRec(self, ChannelsIn, ChannelsOut, OutFun = None, freq0 = 100, freq1 = 15000, Amplitude = 1):
+    def PlayAndRec(self, ChannelsIn, ChannelsOut, OutFun = None, freq0 = 100, freq1 = 15000, duree = 1.0, Amplitude = 1):
         '''
         Play function OutFun on ChannelsOut,
         Records it on ChannelsIn and
@@ -169,8 +177,9 @@ class motu:
         ChannelsIn: input channels we want to use
         ChannelsOut: output channels we want to use
         OutFun: Function to play (default = chirp)
-        freq0 = minimum frequency in Hz of the chirp (if OutFun is None)
-        freq1 = maximum frequency in Hz of the chirp        
+        freq0 = minimum frequency in Hz of the chirp (if OutFun is None) (default = 100 Hz)
+        freq1 = maximum frequency in Hz of the chirp (default = 15000 Hz)
+        duree = duration of the chirp (default = 1 sec)
         Amplitude: Amplitude of the output signal (default = 1)
         '''
 
@@ -180,12 +189,14 @@ class motu:
             ChannelsIn = [ChannelsIn]    
 
         if OutFun is None: # if no function is given in argument the default is a chirp
-            self.OutFun = np.outer(self.Chirp(freq0, freq1)*2**30, np.ones(len(ChannelsOut)))
+            self.OutFun = np.outer(self.Chirp(freq0, freq1, duree)*2**30, np.ones(len(ChannelsOut)))
         else:
             self.OutFun = OutFun*2**30 # sets amplitude to half the possible maximum amplitude in 32 bit (max is 2**31)
 
         #self.OutFun = self.OutFun/5
-
+        
+        self.dureeImpulse = duree
+        
         if Amplitude == 1:
             Amplitude = [1]*len(ChannelsOut)
 
@@ -232,15 +243,16 @@ if __name__== '__main__': # mettre ceci dans un if permet de lancer le script mo
             
         freq0 = 3000 # Minimum frequency of the emitted chirp
         freq1 = 8000 # Maximum frequency of the emitted chirp
+        duree = 1
         
         # emits a chirp from each ChannelsOut successively and record it on ChannelIn
-        impulse = np.zeros([ceil(m.RATE*m.dureeImpulse), len(ChannelsOut)])
+        impulse = np.zeros([ceil(m.RATE*duree), len(ChannelsOut)])
         for k in range(len(ChannelsOut)):
-            impulse[:, k] = m.ChirpRec(ChannelsIn, ChannelsOut[k], freq0 = freq0, freq1 = freq1)[:, 0] # reponse impulsionnelle
+            impulse[:, k] = m.ChirpRec(ChannelsIn, ChannelsOut[k], freq0 = freq0, freq1 = freq1, duree = duree)[:, 0] # reponse impulsionnelle
             time.sleep(0.5)
         # if one want a chirp (for example to calibrate the response between source and receiver)
         
-        time_impulse = np.arange(0.0, m.dureeImpulse, 1.0 / float(m.RATE))
+        time_impulse = np.arange(0.0, duree, 1.0 / float(m.RATE))
         
         # Plot of the played impulse, recorded on the plate
         plt.plot(time_impulse, impulse)
@@ -253,7 +265,7 @@ if __name__== '__main__': # mettre ceci dans un if permet de lancer le script mo
 
         # use the fact that the sound path is reversible h(-t) = h(t)
         TRSignal = impulse[: : -1, :] / np.abs(impulse).max() # signal is reserved temporally and normalized to 1
-        time_result = np.arange(0.0, m.RECORD_SECONDS, 1.0 / float(m.RATE)) 
+        time_result = np.arange(0.0, duree + 0.5, 1.0 / float(m.RATE)) 
         
         ChannelsPlate = [9]#, 10, 11, 12, 13, 14] # Piezoelectric sensor on the plate
         ChannelsPlate = [c - 1 for c in ChannelsPlate]
@@ -276,8 +288,9 @@ if __name__== '__main__': # mettre ceci dans un if permet de lancer le script mo
         m.stream.close()
         m.p.terminate()
     
-    except: # still close the stream if an error occurs
+    except Exception as e: # still close the stream if an error occurs
+    
         m.stream.stop_stream()
         m.stream.close()
         m.p.terminate()
-        
+        print(e)

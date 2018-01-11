@@ -27,11 +27,11 @@ try:
 
     ChannelsOut = list(range(32)) # Channels of the loudspeakers that will play a signal
     ChannelsOut = [c - 1 for c in ChannelsOut] # must retain 1 because sensor number = python number +1
-    ChannelsIn = [9] #capteur piezo sur la plaque
+    ChannelsIn = [11] #[9] #capteur piezo sur la plaque
     ChannelsIn = [c - 1 for c in ChannelsIn]
         
 
-    for ff in range(len(Deltaf)):
+    for ff in range(len(FREQ0)):
 
         freq0 = Central_freq - Deltaf[ff] / 2 #FREQ0[ff] # minimum frequency of the chirp
         freq1 = Central_freq + Deltaf[ff] / 2 #FREQ1[ff] # maximum frequency of the chirp
@@ -57,8 +57,8 @@ try:
         time_result = np.arange(0.0, m.RECORD_SECONDS, 1.0 / float(m.RATE)) 
         
         
-        savefilename = "20180111_32capteurs_" + str(freq0) + "_" + str(freq1) + "Hz"
-        ChannelsPlate = [9, 10, 11, 12, 13, 14]
+        savefilename = "../Dropbox/Langevin/20180111_sensor_in_air_" + str(freq0) + "_" + str(freq1) + "Hz"
+        ChannelsPlate = [11] #[9, 10, 11, 12, 13, 14]
         ChannelsPlate = [c - 1 for c in ChannelsPlate]
 
         max_amplitude = np.zeros([len(ChannelsPlate), 1], dtype = np.float)
@@ -86,7 +86,7 @@ try:
 
             '''
             
-             
+        '''     
         Distance_vect = [0, 21.5, 8, 18.5, 25, 9.5] #[18.5, 11, 12, 0, 7.5, 16] # distance from sensor 9 in cm
         PSF = np.column_stack((np.array(Distance_vect).reshape(6,1), np.array(max_amplitude)))
         PSF = PSF[PSF[:,0].argsort()] # sort data along the distance column
@@ -100,6 +100,13 @@ try:
         data = {'Distance_cm':Distance_cm, 'PSF':PSF_values, 'ChannelsPlate':ChannelsPlate, 'Frequency_range':Frequency_range, 'max_amplitude':max_amplitude, 'energy':energy}#, 'mean_freq_impulse':mean_freq}
         savemat(filename, data)
         '''
+        Frequency_range = [freq0, freq1]
+        # saving data in a .mat file
+        filename = savefilename
+        data = {'ChannelsPlate':ChannelsPlate, 'Frequency_range':Frequency_range, 'max_amplitude':max_amplitude, 'energy':energy}#, 'mean_freq_impulse':mean_freq}
+        savemat(filename, data)
+        
+        '''
         # Plot the Point Spread Function (PSF)
         plt.plot(Distance_cm, PSF_values, 'k')
         plt.xlabel("Distance [cm]")
@@ -108,7 +115,7 @@ try:
         plt.rc('font', size = 18)
         plt.show()
         '''
-        
+          
     m.stream.stop_stream()
     m.stream.close()
     m.p.terminate()

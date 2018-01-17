@@ -31,7 +31,7 @@ try:
     ChannelsIn = [c - 1 for c in ChannelsIn]
         
 
-    for ff in range(len(FREQ0)):
+    for ff in range(len(Deltaf)):
 
         freq0 = Central_freq - Deltaf[ff] / 2 #FREQ0[ff] # minimum frequency of the chirp
         freq1 = Central_freq + Deltaf[ff] / 2 #FREQ1[ff] # maximum frequency of the chirp
@@ -57,7 +57,7 @@ try:
         time_result = np.arange(0.0, m.RECORD_SECONDS, 1.0 / float(m.RATE)) 
         
         
-        savefilename = "../Dropbox/Langevin/20180111_sensor_in_air_" + str(freq0) + "_" + str(freq1) + "Hz"
+        savefilename = "../Donnees_Langevin/20180111_sensor_in_air_" + str(freq0) + "_" + str(freq1) + "Hz"
         ChannelsPlate = [11] #[9, 10, 11, 12, 13, 14]
         ChannelsPlate = [c - 1 for c in ChannelsPlate]
 
@@ -120,7 +120,9 @@ try:
     m.stream.close()
     m.p.terminate()
     
-except:
+except Exception as e: # still close the stream if an error occurs
+
     m.stream.stop_stream()
     m.stream.close()
     m.p.terminate()
+    print(e)

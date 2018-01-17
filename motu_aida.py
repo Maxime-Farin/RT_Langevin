@@ -12,22 +12,22 @@ class motu:
     def __init__(self):
         self.CHUNK = 1024*8
         self.FORMAT = pyaudio.paInt32
-        self.CHANNELS = 24
-        self.RATE = 48000
-        self.dureeImpulse = 1.0
+        self.CHANNELS = 16
+        self.RATE = 96000*2
+        self.dureeImpulse = 2.0
         self.RECORD_SECONDS = self.dureeImpulse+0.5
         t=np.arange(0.0,self.dureeImpulse,1.0 /float(self.RATE))
-        # Chirp definition
-        self.chirp=signal.chirp(t,100,t.max(),3000)
-        self.chirp=self.chirp*2**30
+        self.chirp=signal.chirp(t,1500,t.max(),90000,'linear',90.0)
+        self.chirp=self.chirp*2**31
         self.chirp=self.chirp.astype('int32')
         flagFound=False
         self.p = pyaudio.PyAudio()
         for iDevice in range(self.p.get_device_count()):
             device=self.p.get_device_info_by_index(iDevice)
             #if (device['maxInputChannels']==23 and device['hostApi']==2):
-            if (device['maxInputChannels']==self.CHANNELS and device['maxOutputChannels']==self.CHANNELS and device['hostApi']==2):
-                print('orttoto')
+            #if (device['maxInputChannels']==24 and device['hostApi']==2 and  device['name'].find('MOTU')>=0):
+            if (device['maxInputChannels']==24 and device['hostApi']==2 and  device['name'].find('OrionTB')>=0):
+                print(device)
                 flagFound=True
                 break
 
@@ -104,7 +104,7 @@ class motu:
         self.ChannelsIn=ChannelsIn
         self.ChannelsOut=ChannelsOut
         self.data3=np.zeros([self.CHUNK,len(ChannelsIn)],dtype=np.int32)
-        self.result=np.zeros((self.RECORD_SECONDS*self.RATE,len(ChannelsIn)),dtype=np.int32)
+        self.result=np.zeros((int(self.RECORD_SECONDS*self.RATE),len(ChannelsIn)),dtype=np.int32)
         
         self.index=0
         while self.index!=-1:
@@ -128,6 +128,7 @@ class motu:
     def __close__(self):
         self.stream.close()
         self.p.terminate()
+        del p
         
 
         
@@ -135,6 +136,6 @@ if __name__== '__main__':
     m=motu()
     plt.cla()
     for i in range(1):
-        impulse=m.impulseRec(ChannelsIn=[0,8],ChannelsOut=[1,8])
+        impulse=m.impulseRec([2-1,1-1],[7-1])
     plt.plot(impulse[:,0])
     plt.show()

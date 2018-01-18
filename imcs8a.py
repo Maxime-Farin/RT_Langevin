@@ -97,5 +97,5 @@ class imcs:
 
 
 if __name__== '__main__':
-    a=imcs('COM4')
-    a.move(100,200,30)
+    a = imcs('COM4')
+    a.move(0, 340, 385)

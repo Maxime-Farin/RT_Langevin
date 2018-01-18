@@ -3,6 +3,8 @@
 Created on Tue May 16 09:59:18 2017
 
 @author: LOA
+
+Pour acquérir des données avec le vibromètre laser
 """
 import serial
 from time import sleep
@@ -53,7 +55,7 @@ class OVF5000:
         
         
 if __name__ == '__main__':
-    vibro=OVF5000('COM3')
+    vibro=OVF5000('COM5')
     #vibro=OVF5000('/dev/ttyUSB1')
     vibro.level()
     vibro.autofocus()

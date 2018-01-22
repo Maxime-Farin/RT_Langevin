@@ -1,7 +1,7 @@
 from motu import motu
 from imcs8a import imcs
 from ovf5000 import OVF5000
-from scipy.io import savemat
+from scipy.io import savemat, loadmat
 from math import *
 import numpy as np
 import os
@@ -16,7 +16,7 @@ centerz = 385
 
 
 # Save directory
-savefilename = '../Donnees_Langevin/20180119_Full_Scan_vibro'
+savefilename = '../20180119_Full_Scan_vibro'
 if not os.path.exists(savefilename):
     os.makedirs(savefilename)
 
@@ -41,12 +41,14 @@ ChannelVibro = [c - 1 for c in ChannelVibro]
 freq0 = 1000 # minimum frequency of the chirp
 freq1 = 10000 # maximum frequency of the chirp
 
-Positions_y = [c*50 + 370 for c in list(range(11))]
-Positions_z = [c*40 + 300 for c in list(range(11))]
+Positions_y = [c*50 + 70 for c in list(range(11))]
+Positions_z = [c*40 + 420 for c in list(range(5))]
+#Positions_y = [520, 570]
+#Positions_z = [380]
 time_impulse = np.arange(0.0, m.dureeImpulse, 1.0 / float(m.RATE))
 
 # Move to initial scan position
-print('Move to plate center...\n')
+print('Move to first position...\n')
 motor.move(centerx, Positions_y[0], Positions_z[0])
 time.sleep(5)
 

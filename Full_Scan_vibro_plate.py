@@ -42,7 +42,7 @@ freq0 = 1000 # minimum frequency of the chirp
 freq1 = 10000 # maximum frequency of the chirp
 
 Positions_y = [c*50 + 70 for c in list(range(11))]
-Positions_z = [c*40 + 420 for c in list(range(5))]
+Positions_z = [c*40 + 180 for c in list(range(5))]
 #Positions_y = [520, 570]
 #Positions_z = [380]
 time_impulse = np.arange(0.0, m.dureeImpulse, 1.0 / float(m.RATE))

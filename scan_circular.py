@@ -1,4 +1,4 @@
-from motu import motu
+from motu_aida import motu
 from imcs8a import imcs
 from ovf5000 import OVF5000
 from scipy.io import savemat
@@ -10,21 +10,21 @@ import matplotlib.pyplot as plt
 
 
 # Position of the center of the plate
-centerz = 230
-centery = 325
-centerx = 10
+centerz = 220
+centery = 343
+centerx = 0
 
 R = 153
 
 # Save directory
-directory = 'circ_with_d12_r153'
+directory = 'D:\circ_without3_d12_r153'
 if not os.path.exists(directory):
     os.makedirs(directory)
 
 # Initialization motor
-motor = imcs('COM4', False)
+motor = imcs('COM13')
 # Initialization vibrometer
-vibro = OVF5000('COM5')
+vibro = OVF5000('COM12')
 # Initialization class motu
 m = motu()
 
@@ -37,26 +37,26 @@ for i in range(nbangles):
     z=centerz+R*sin(angle)
     
     # Move to point (y,z) on the plane
-    motor.move(z, y, centerx)
+    motor.move(centerx, y, z)
     time.sleep(5)
     
     if vibro.level() < 400: # if focus is not good
         vibro.autofocus() # function to make focus on the plate
     
     # Send a chirp
-    impulse = m.impulseRec([2-1,1-1], [7-1])
+    impulse = m.impulseRec([5-1,1-1], [7-1])
 
-    if (i == 0): # create empty vector of data
-        imp = np.zeros((impulse.shape[0],impulse.shape[1],nbangles))
+    #if (i == 0): # create empty vector of data
+    #    imp = np.zeros((impulse.shape[0],impulse.shape[1],nbangles))
 
     # Collect data in vector imp
-    imp[:,:,i] = impulse[:,:]
+    #imp[:,:,i] = impulse[:,:]
 
     # Save data
-    savemat('%s/data_%d'% (directory,i+1),{'impulse':imp,'angle':angle,'z':z,'y':y,'x':centerx,'R':R})
+    savemat('%s/data_%d'% (directory,i+1),{'impulse':impulse,'angle':angle})
 
 
 plt.cla()
-plt.plot(imp[:,0:])
+plt.plot(imp[:,:])
 plt.show()  
     

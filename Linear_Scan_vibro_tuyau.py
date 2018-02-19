@@ -11,20 +11,20 @@ import matplotlib.pyplot as plt
 
 # Position of the center of the plate
 centerx = 0
-centery = 320
-centerz = 385
+centery = 315
+centerz = 320
 
 
 # Save directory
-savefilename = '../../Documents/Donnees_locales_RT/20180125_Full_Scan_vibro'
+savefilename = '../../Documents/Donnees_locales_RT/20180219_Linear_Scan_Parallel_Pipe'
 if not os.path.exists(savefilename):
     os.makedirs(savefilename)
 
 print('Open serial ports...\n')
 # Initialization motor
-motor = imcs('COM6')
+motor = imcs('COM13')
 # Initialization vibrometer
-vibro = OVF5000('COM7')
+vibro = OVF5000('COM12')
 # Initialization class motu
 m = motu()
 
@@ -43,8 +43,8 @@ m.RATE = 48000*4;
 freq0 = 1000 # minimum frequency of the chirp
 freq1 = 10000 # maximum frequency of the chirp
 
-Positions_y = [c*20 + 60 for c in list(range(27))]
-Positions_z = [c*20 + 270 for c in list(range(17))]
+Positions_y = [c*5 + 60 for c in list(range(103))]
+Positions_z = [320]
 #Positions_y = [520, 570]
 #Positions_z = [380]
 time_impulse = np.arange(0.0, duree, 1.0 / float(m.RATE))

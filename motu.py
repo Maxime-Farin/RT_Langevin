@@ -236,9 +236,9 @@ if __name__== '__main__': # mettre ceci dans un if permet de lancer le script mo
     
     try:
     
-        ChannelsOut = list(range(10)) # Output channels
+        ChannelsOut = 28 # Output channels
         ChannelsOut = [c - 1 for c in ChannelsOut] # must retain 1 because sensor number = python number +1
-        ChannelsIn = [9] #capteur piezo sur la plaque
+        ChannelsIn = [4] #capteur piezo sur la plaque
         ChannelsIn = [c - 1 for c in ChannelsIn]
             
         freq0 = 3000 # Minimum frequency of the emitted chirp
@@ -267,7 +267,7 @@ if __name__== '__main__': # mettre ceci dans un if permet de lancer le script mo
         TRSignal = impulse[: : -1, :] / np.abs(impulse).max() # signal is reserved temporally and normalized to 1
         time_result = np.arange(0.0, duree + 0.5, 1.0 / float(m.RATE)) 
         
-        ChannelsPlate = [9]#, 10, 11, 12, 13, 14] # Piezoelectric sensor on the plate
+        ChannelsPlate = [4]#, 10, 11, 12, 13, 14] # Piezoelectric sensor on the plate
         ChannelsPlate = [c - 1 for c in ChannelsPlate]
         
         for k in range(len(ChannelsPlate)):

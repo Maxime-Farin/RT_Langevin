@@ -18,7 +18,7 @@ class motu:
         self.RECORD_SECONDS = self.dureeImpulse+0.5
         t=np.arange(0.0,self.dureeImpulse,1.0 /float(self.RATE))
         self.chirp=signal.chirp(t,1500,t.max(),90000,'linear',90.0)
-        self.chirp=self.chirp*2**31
+        self.chirp=self.chirp*2**30
         self.chirp=self.chirp.astype('int32')
         flagFound=False
         self.p = pyaudio.PyAudio()
@@ -26,7 +26,7 @@ class motu:
             device=self.p.get_device_info_by_index(iDevice)
             #if (device['maxInputChannels']==23 and device['hostApi']==2):
             #if (device['maxInputChannels']==24 and device['hostApi']==2 and  device['name'].find('MOTU')>=0):
-            if (device['maxInputChannels']==24 and device['hostApi']==2 and  device['name'].find('OrionTB')>=0):
+            if (device['maxInputChannels']==32 and device['hostApi']==2):
                 print(device)
                 flagFound=True
                 break

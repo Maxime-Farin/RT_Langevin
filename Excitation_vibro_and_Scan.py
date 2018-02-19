@@ -9,7 +9,8 @@ import os
 import time
 import matplotlib.pyplot as plt
 
-
+# This script excites the plate at a given position (y,z) with an impulse 
+# and measure the plate vibration with the vibrometer at several positions on the plate
 
 print('Open serial ports...\n')
 # Initialization motor
@@ -25,6 +26,7 @@ centerx = 0
 centery = 220
 centerz = 300
 
+
 ChannelsOut = list(range(32))
 ChannelVibro = [1] #[9] # vibrometer channel
 ChannelVibro = [c - 1 for c in ChannelVibro]
@@ -36,7 +38,7 @@ if not os.path.exists(savefilename):
 
 # load data and write it in matrix impulse
 d = loadmat('../../Documents/Donnees_locales_RT/20180119_Full_Scan_vibro/Position_y_220_z_300_LP_17.mat')
-impulse = np.zeros([len(d['impulse_mpersec'][0]), len(ChannelsOut)]) 
+impulse = np.zeros([len(d['impulse_mpersec'][0]), len(ChannelsOut)], dtype = np.float)
 for cc in range(len(ChannelsOut)):
     d = loadmat('../../Documents/Donnees_locales_RT/20180119_Full_Scan_vibro/Position_y_%d_z_%d_LP_%d.mat'% (centery, centerz, ChannelsOut[cc] + 1))
     impulse[:, cc] = d['impulse_mpersec'][0]
@@ -44,11 +46,14 @@ for cc in range(len(ChannelsOut)):
 # invert impulse matrix temporally
 TRSignal = impulse[: : -1, :] / np.abs(impulse).max() 
 
+time_result = np.arange(0.0, m.RECORD_SECONDS, 1.0 / float(m.RATE)) 
+  
+
 # Scan positions
 Positions_y = [c*5 + 60 for c in list(range(105))]
 Positions_z = [c*5 + 180 for c in list(range(83))]
 
-time_result = np.arange(0.0, m.RECORD_SECONDS, 1.0 / float(m.RATE)) 
+
 #max_amplitude = np.zeros([len(Positions_y), len(Positions_z)], dtype = np.float)
 #energy = np.zeros([len(Positions_y), len(Positions_z)], dtype = np.float)
 
@@ -84,7 +89,7 @@ for zz in range(len(Positions_z)):
         time.sleep(5)
 
 print('Scan Completed')
-    
+   
 '''
 # Position of the excitation point
 centerx = 0
